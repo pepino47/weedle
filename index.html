@@ -214,12 +214,19 @@ const letters = s => strip(s).length;
 const arrow = (g,t)=> g===t ? "" : (g<t?"↑":"↓");
 
 function alphaProximityColor(guessName, mysteryName) {
-  const g = guessName.trim()[0].toLowerCase();
-  const m = mysteryName.trim()[0].toLowerCase();
-  if (!g || !m) return "gray";
-  if (g === m) return "green";
-  return Math.abs(g.charCodeAt(0) - m.charCodeAt(0)) <= 1 ? "yellow" : "gray";
+  const guessLower = guessName.toLowerCase();
+  const mysteryLower = mysteryName.toLowerCase();
+
+  if (guessLower === mysteryLower) return "green";
+
+  const g = guessLower[0];
+  const m = mysteryLower[0];
+
+  if (Math.abs(g.charCodeAt(0) - m.charCodeAt(0)) <= 1) return "yellow";
+
+  return "gray";
 }
+
 
 function typeProximityColor(guessType, mysteryType) {
   const order = ["sativa","sativa/hybrid","hybrid","indica/hybrid","indica"];
