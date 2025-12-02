@@ -105,7 +105,7 @@ tbody td{
   text-align: center;
 }
 
-/* FIXED, CLEAN, WORDLE-LIKE BARS */
+/* Wordle-style bars */
 .stats-row {
   display: flex;
   align-items: center;
@@ -205,7 +205,6 @@ tbody td{
 <div id="statsOverlay">
   <div id="statsCard">
     <h2 id="statsTitle"></h2>
-    <div id="statsGuesses"></div>
 
     <h3 style="margin-top:22px;">Today's Guess Distribution</h3>
     <div id="statsBars"></div>
@@ -299,7 +298,8 @@ function enableInputHandlers() {
     dropdown.innerHTML="";
     if(!q){ dropdown.style.display="none"; return; }
 
-    const matches = strains.filter(s => s.name.toLowerCase().includes(q));
+    // back to "starts with" behavior
+    const matches = strains.filter(s => s.name.toLowerCase().startsWith(q));
     matches.forEach(s=>{
       const d=document.createElement("div");
       d.className="dd-item";
@@ -404,20 +404,16 @@ function flipTilesSequential(container){
   });
 }
 
-/* ------------------ FIXED, CLEAN STATS OVERLAY ------------------ */
+/* STATS OVERLAY */
 function showStatsOverlay(won) {
   const overlay=document.getElementById("statsOverlay");
   const title=document.getElementById("statsTitle");
-  const g=document.getElementById("statsGuesses");
   const bars=document.getElementById("statsBars");
 
   title.textContent = won
     ? `You solved Weedle in ${guessCount} guess${guessCount!==1?"es":""}!`
     : `Out of guesses — the strain was ${mystery.name}`;
 
-  g.textContent = `Guesses used: ${guessCount} / ${MAX_GUESSES}`;
-
-  /* Fake global distribution — replace with real backend later */
   const fakeDist=[0,12,22,34,18,9];
   bars.innerHTML="";
 
