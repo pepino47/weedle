@@ -7,7 +7,7 @@
 
 <style>
 /* ------------------ THEME ------------------ */
-:root{
+:root {
   --bg:#f6f7f8;
   --card:#ffffff;
   --muted:#6b7280;
@@ -35,8 +35,7 @@ h1{margin:0; font-size:1.25rem;}
   display: block; margin: 0 auto;
 }
 #strainLabel {
-  margin-top: 8px; font-size: 14px;
-  color: var(--muted); text-align: center;
+  margin-top: 8px; font-size: 14px; color: var(--muted); text-align: center;
 }
 
 /* ------------------ INPUT + DROPDOWN ------------------ */
@@ -78,11 +77,11 @@ tbody td{
 .flip{ transform:rotateX(90deg); }
 .flip.show{ transform:rotateX(0deg); }
 
-/* ------------------ SUCCESS ------------------ */
+/* ------------------ SUCCESS MESSAGE ------------------ */
 #success{
   display:none; margin-top:14px; padding:12px;
-  background:var(--green); color:white; text-align:center;
-  font-weight:700; border-radius:8px;
+  background:var(--green); color:white;
+  text-align:center; font-weight:700; border-radius:8px;
 }
 
 /* ------------------ STATS OVERLAY ------------------ */
@@ -105,17 +104,50 @@ tbody td{
   box-shadow: 0 10px 40px rgba(0,0,0,0.2);
   text-align: center;
 }
+
+/* FIXED, CLEAN, WORDLE-LIKE BARS */
+.stats-row {
+  display: flex;
+  align-items: center;
+  margin: 6px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.stats-row-label {
+  width: 22px;
+  text-align: right;
+  margin-right: 10px;
+}
+
 .stats-bar {
   background: #d1d5db;
   height: 22px;
-  border-radius: 6px;
-  margin-top: 6px;
-  text-align: left;
-  font-size: 13px;
-  padding-left: 6px;
-  line-height: 22px;
+  border-radius: 4px;
+  flex-grow: 1;
+  overflow: hidden;
 }
-.stats-bar.green { background: var(--green); color: white; }
+
+.stats-bar-fill {
+  height: 100%;
+  background: var(--gray);
+  border-radius: 4px;
+}
+
+.stats-bar-fill.green { background: var(--green); }
+
+/* Close button */
+#closeStats {
+  margin-top: 20px;
+  padding: 8px 14px;
+  border: 1px solid #ccc;
+  background: #eee;
+  border-radius: 6px;
+  cursor: pointer;
+}
+#closeStats:hover {
+  background:#ddd;
+}
 </style>
 </head>
 
@@ -178,7 +210,7 @@ tbody td{
     <h3 style="margin-top:22px;">Today's Guess Distribution</h3>
     <div id="statsBars"></div>
 
-    <button id="closeStats" style="margin-top:20px;">Close</button>
+    <button id="closeStats">Close</button>
   </div>
 </div>
 
@@ -372,7 +404,7 @@ function flipTilesSequential(container){
   });
 }
 
-/* STATS OVERLAY */
+/* ------------------ FIXED, CLEAN STATS OVERLAY ------------------ */
 function showStatsOverlay(won) {
   const overlay=document.getElementById("statsOverlay");
   const title=document.getElementById("statsTitle");
@@ -383,19 +415,35 @@ function showStatsOverlay(won) {
     ? `You solved Weedle in ${guessCount} guess${guessCount!==1?"es":""}!`
     : `Out of guesses — the strain was ${mystery.name}`;
 
-  g.textContent = `Guesses used: ${guessCount} / 6`;
+  g.textContent = `Guesses used: ${guessCount} / ${MAX_GUESSES}`;
 
-  /* Fake global distribution — replace with real data later */
+  /* Fake global distribution — replace with real backend later */
   const fakeDist=[0,12,22,34,18,9];
   bars.innerHTML="";
 
   fakeDist.forEach((v,i)=>{
-    const bar=document.createElement("div");
-    bar.className="stats-bar";
-    bar.style.width=(v*3)+"px";
-    bar.textContent=`${i+1}: ${v}`;
-    if(won && i+1===guessCount) bar.classList.add("green");
-    bars.appendChild(bar);
+    const row = document.createElement("div");
+    row.className = "stats-row";
+
+    const label = document.createElement("div");
+    label.className = "stats-row-label";
+    label.textContent = `${i+1}:`;
+
+    const bar = document.createElement("div");
+    bar.className = "stats-bar";
+
+    const fill = document.createElement("div");
+    fill.className = "stats-bar-fill";
+    fill.style.width = `${v * 3}px`;
+
+    if (won && (i+1) === guessCount) {
+      fill.classList.add("green");
+    }
+
+    bar.appendChild(fill);
+    row.appendChild(label);
+    row.appendChild(bar);
+    bars.appendChild(row);
   });
 
   overlay.style.display="flex";
