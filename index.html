@@ -152,16 +152,17 @@ tbody td{
    STRAIN DATA WITH IMAGE SUPPORT
 --------------------------------------------- */
 const strains = [
-  /* Example with image */
+  /* Example strain with image */
   { 
     name:"Cherry Pie", 
     type:"Hybrid", 
     thc:18, 
     terpene:"Caryophyllene", 
     year:2010,
-    image:"cherry-pie.jpg" 
+    image:"cherry-pie.jpg"
   },
 
+  /* Strains without images yet */
   { name:"Blue Dream", type:"Sativa/Hybrid", thc:18, terpene:"Myrcene", year:2003 },
   { name:"OG Kush", type:"Hybrid", thc:20, terpene:"Limonene", year:1996 },
   { name:"Sour Diesel", type:"Sativa", thc:19, terpene:"Limonene", year:1991 },
@@ -173,7 +174,7 @@ const strains = [
 ];
 
 /* ---------------------------------------------
-   DAILY STRAIN — ONLY STRAINS WITH IMAGES
+   DAILY STRAIN — ONLY FROM STRAINS WITH IMAGES
 --------------------------------------------- */
 const strainsWithImages = strains.filter(s => s.image);
 
@@ -190,18 +191,27 @@ function dailyIndex(date = new Date()) {
 const mystery = pool[dailyIndex()];
 
 /* ---------------------------------------------
-   DISPLAY STRAIN IMAGE IF AVAILABLE
+   DISPLAY DATE ABOVE IMAGE (NO STRAIN NAME)
 --------------------------------------------- */
 const strainImageEl = document.getElementById("strainImage");
 const strainLabelEl = document.getElementById("strainLabel");
 
+// Format today's date nicely
+const today = new Date();
+const dateStr = today.toLocaleDateString("en-US", {
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+  year: "numeric"
+});
+
 if (mystery.image) {
   strainImageEl.src = "images/" + mystery.image;
   strainImageEl.style.display = "block";
-  strainLabelEl.textContent = mystery.name;
+  strainLabelEl.textContent = `Strain of the Day — ${dateStr}`;
 } else {
   strainImageEl.style.display = "none";
-  strainLabelEl.textContent = "";
+  strainLabelEl.textContent = `Strain of the Day — ${dateStr}`;
 }
 
 /* ---------------------------------------------
