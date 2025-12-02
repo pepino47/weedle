@@ -133,7 +133,8 @@ tbody td{
 <table>
 <thead>
 <tr>
-  <th>Strain</th>
+  <th>Name</th>
+  <th>Letters</th>
   <th>Type</th>
   <th>THC %</th>
   <th>Dominant Terpene</th>
@@ -231,6 +232,16 @@ function colorCat(g,t){
   return g.toLowerCase()===t.toLowerCase() ? "green" : "gray";
 }
 
+function alphaProximityColor(guessName, mysteryName) {
+  const g = guessName.trim()[0].toLowerCase();
+  const m = mysteryName.trim()[0].toLowerCase();
+
+  if (g === m) return "green";
+
+  const diff = Math.abs(g.charCodeAt(0) - m.charCodeAt(0));
+  return diff <= 1 ? "yellow" : "gray";
+}
+
 /* ---------------------------------------------
    DROPDOWN
 --------------------------------------------- */
@@ -290,16 +301,18 @@ function submitGuess(){
 
   const tr=document.createElement("tr");
 
-  const ls = letters(guess.name);
-  const lt = letters(mystery.name);
-  const lc = colorNum(ls,lt,1);
+/* NAME COLUMN (colored by alphabetical proximity) */
+const nameTd = document.createElement("td");
+const nameColor = alphaProximityColor(guess.name, mystery.name);
+nameTd.appendChild(tile(guess.name, nameColor));
 
-  const strainTd=document.createElement("td");
-  const group=document.createElement("div");
-  group.appendChild(tile(guess.name, lc));
-  group.appendChild(document.createElement("br"));
-  group.appendChild(tile(`${ls} ${arrow(ls,lt)}`, lc));
-  strainTd.appendChild(group);
+/* LETTER COUNT COLUMN (same logic as before) */
+const ls = letters(guess.name);
+const lt = letters(mystery.name);
+const letterColor = colorNum(ls, lt, 1);
+const lettersTd = document.createElement("td");
+lettersTd.appendChild(tile(`${ls} ${arrow(ls,lt)}`, letterColor));
+
 
   const typeTd=document.createElement("td");
   typeTd.appendChild(tile(guess.type, colorCat(guess.type,mystery.type)));
@@ -321,7 +334,8 @@ function submitGuess(){
          colorNum(guess.year,mystery.year,2))
   );
 
-  tr.appendChild(strainTd);
+  tr.appendChild(nameTd);
+  tr.appendChild(lettersTd);
   tr.appendChild(typeTd);
   tr.appendChild(thcTd);
   tr.appendChild(terpTd);
