@@ -28,36 +28,24 @@ header{display:flex; gap:14px; align-items:center;}
 h1{margin:0; font-size:1.25rem;}
 
 /* ------------------ STRAIN IMAGE ------------------ */
-#strainImageBox {
-  width: 100%;
-  text-align: center;
-  margin-top: 20px;
-  margin-bottom: 25px;
-}
-
+#strainImageBox { width: 100%; text-align: center; margin-top: 20px; margin-bottom: 25px; }
 #strainImage {
-  width: 100%;
-  max-width: 260px;
-  height: auto;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-  display: block;
-  margin: 0 auto;
+  width: 100%; max-width: 260px; height: auto;
+  border-radius: 16px; box-shadow:0 4px 20px rgba(0,0,0,0.12);
+  display: block; margin: 0 auto;
 }
-
 #strainLabel {
-  margin-top: 8px;
-  font-size: 14px;
-  color: var(--muted);
-  text-align: center;
+  margin-top: 8px; font-size: 14px;
+  color: var(--muted); text-align: center;
 }
 
 /* ------------------ INPUT + DROPDOWN ------------------ */
 .controls{display:flex; gap:12px; margin-top:12px;}
 #guessContainer{position:relative; width:320px;}
 #guessInput{
-  width:100%; padding:10px 12px; border-radius:8px; border:1px solid #d1d5db;
-  font-size:15px; background:white; box-sizing:border-box;
+  width:100%; padding:10px 12px; border-radius:8px;
+  border:1px solid #d1d5db; font-size:15px;
+  background:white; box-sizing:border-box;
 }
 #dropdown{
   position:absolute; top:100%; left:0; right:0; background:white;
@@ -84,20 +72,50 @@ tbody td{
   font-weight:700; font-size:14px; transform-style:preserve-3d;
   transition:transform 0.25s ease-in;
 }
-
 .green{background:var(--green);}
 .yellow{background:var(--yellow); color:#0b1220;}
 .gray{background:var(--gray);}
-
 .flip{ transform:rotateX(90deg); }
 .flip.show{ transform:rotateX(0deg); }
 
 /* ------------------ SUCCESS ------------------ */
 #success{
   display:none; margin-top:14px; padding:12px;
-  background:var(--green); color:white;
-  text-align:center; font-weight:700; border-radius:8px;
+  background:var(--green); color:white; text-align:center;
+  font-weight:700; border-radius:8px;
 }
+
+/* ------------------ STATS OVERLAY ------------------ */
+#statsOverlay {
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(6px);
+  background: rgba(0,0,0,0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+#statsCard {
+  background: white;
+  padding: 26px;
+  width: 90%;
+  max-width: 420px;
+  border-radius: 14px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  text-align: center;
+}
+.stats-bar {
+  background: #d1d5db;
+  height: 22px;
+  border-radius: 6px;
+  margin-top: 6px;
+  text-align: left;
+  font-size: 13px;
+  padding-left: 6px;
+  line-height: 22px;
+}
+.stats-bar.green { background: var(--green); color: white; }
 </style>
 </head>
 
@@ -131,7 +149,7 @@ tbody td{
   <button id="resetBtn">Reset</button>
 </div>
 
-<!-- RESULTS -->
+<!-- RESULTS TABLE -->
 <table>
 <thead>
 <tr>
@@ -151,42 +169,47 @@ tbody td{
 </div>
 </div>
 
+<!-- POST-GAME STATS OVERLAY -->
+<div id="statsOverlay">
+  <div id="statsCard">
+    <h2 id="statsTitle"></h2>
+    <div id="statsGuesses"></div>
+
+    <h3 style="margin-top:22px;">Today's Guess Distribution</h3>
+    <div id="statsBars"></div>
+
+    <button id="closeStats" style="margin-top:20px;">Close</button>
+  </div>
+</div>
+
 <script>
 let strains = [];
 let mystery;
+let guessCount = 0;
+const MAX_GUESSES = 6;
 
-/* ---------------------------------------------
-   LOAD STRAINS FROM JSON
---------------------------------------------- */
+/* LOAD STRAINS */
 fetch("strains.json")
   .then(res => res.json())
-  .then(data => {
-    strains = data;
-    initializeGame();
-  });
+  .then(data => { strains = data; initializeGame(); });
 
-/* ---------------------------------------------
-   GAME INITIALIZATION
---------------------------------------------- */
+/* INITIALIZE GAME */
 function initializeGame() {
-  const strainsWithImages = strains.filter(s => s.image);
-  const pool = strainsWithImages.length ? strainsWithImages : strains;
+  const withImages = strains.filter(s => s.image);
+  const pool = withImages.length ? withImages : strains;
 
-  function dailyIndex(date = new Date()) {
-    const epoch = Date.UTC(2023, 0, 1);
-    const today = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-    return Math.floor((today - epoch) / (1000*60*60*24)) % pool.length;
+  function dailyIndex(d = new Date()) {
+    const epoch = Date.UTC(2023,0,1);
+    const today = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+    return Math.floor((today - epoch) / 86400000) % pool.length;
   }
 
   mystery = pool[dailyIndex()];
-
   loadDailyStrainImage();
   enableInputHandlers();
 }
 
-/* ---------------------------------------------
-   DISPLAY DATE + IMAGE
---------------------------------------------- */
+/* DISPLAY DATE & IMAGE */
 function loadDailyStrainImage() {
   const strainImageEl = document.getElementById("strainImage");
   const strainLabelEl = document.getElementById("strainLabel");
@@ -206,112 +229,107 @@ function loadDailyStrainImage() {
   }
 }
 
-/* ---------------------------------------------
-   HELPERS
---------------------------------------------- */
+/* HELPERS */
 const strip = s => s.replace(/\s+/g,'');
 const letters = s => strip(s).length;
 const arrow = (g,t)=> g===t ? "" : (g<t?"↑":"↓");
 
 function alphaProximityColor(guessName, mysteryName) {
-  const guessLower = guessName.toLowerCase();
-  const mysteryLower = mysteryName.toLowerCase();
-
-  if (guessLower === mysteryLower) return "green";
-
-  const g = guessLower[0];
-  const m = mysteryLower[0];
-
+  const g = guessName[0].toLowerCase();
+  const m = mysteryName[0].toLowerCase();
+  if (g === m) return "green";
   if (Math.abs(g.charCodeAt(0) - m.charCodeAt(0)) <= 1) return "yellow";
-
   return "gray";
 }
 
-
-function typeProximityColor(guessType, mysteryType) {
-  const order = ["sativa","sativa/hybrid","hybrid","indica/hybrid","indica"];
-  const gi = order.indexOf(guessType.toLowerCase());
-  const mi = order.indexOf(mysteryType.toLowerCase());
-  if (gi === -1 || mi === -1) return "gray";
-  if (gi === mi) return "green";
-  return Math.abs(gi - mi) === 1 ? "yellow" : "gray";
+function typeProximityColor(a,b){
+  const order=["sativa","sativa/hybrid","hybrid","indica/hybrid","indica"];
+  const ai=order.indexOf(a.toLowerCase());
+  const bi=order.indexOf(b.toLowerCase());
+  if(ai===-1||bi===-1) return "gray";
+  if(ai===bi) return "green";
+  return Math.abs(ai-bi)===1?"yellow":"gray";
 }
 
-function colorNum(g,t,threshold){
+function colorNum(g,t,thr){
   if(g===t) return "green";
-  if(Math.abs(g-t)<=threshold) return "yellow";
+  if(Math.abs(g-t)<=thr) return "yellow";
   return "gray";
 }
 
-/* ---------------------------------------------
-   ENABLE INPUT + DROPDOWN + BUTTONS
---------------------------------------------- */
+/* INPUT HANDLERS */
 function enableInputHandlers() {
   const guessInput = document.getElementById("guessInput");
   const dropdown = document.getElementById("dropdown");
 
   guessInput.addEventListener("input", e => {
     const q = e.target.value.trim().toLowerCase();
-    dropdown.innerHTML = "";
-    if (!q) { dropdown.style.display = "none"; return; }
+    dropdown.innerHTML="";
+    if(!q){ dropdown.style.display="none"; return; }
 
-    const matches = strains.filter(s => s.name.toLowerCase().startsWith(q));
-    matches.forEach(s => {
-      const d = document.createElement("div");
-      d.className = "dd-item";
-      d.textContent = s.name;
-      d.onclick = () => { guessInput.value = s.name; dropdown.style.display = "none"; };
+    const matches = strains.filter(s => s.name.toLowerCase().includes(q));
+    matches.forEach(s=>{
+      const d=document.createElement("div");
+      d.className="dd-item";
+      d.textContent=s.name;
+      d.onclick=()=>{ guessInput.value=s.name; dropdown.style.display="none"; };
       dropdown.appendChild(d);
     });
-
-    dropdown.style.display = matches.length ? "block" : "none";
+    dropdown.style.display = matches.length?"block":"none";
   });
 
   document.getElementById("submitBtn").onclick = submitGuess;
   document.getElementById("resetBtn").onclick = resetGame;
 }
 
+/* RESET */
 function resetGame() {
+  guessCount = 0;
   document.getElementById("guessesBody").innerHTML = "";
   document.getElementById("success").style.display = "none";
   document.getElementById("guessInput").value = "";
 }
 
-/* ---------------------------------------------
-   SUBMIT GUESS
---------------------------------------------- */
+/* SUBMIT GUESS */
 function submitGuess() {
+  if (guessCount >= MAX_GUESSES) {
+    alert("You've reached the maximum of 6 guesses.");
+    return showStatsOverlay(false);
+  }
+
   const raw = document.getElementById("guessInput").value.trim();
   if (!raw) return alert("Select a strain from the dropdown.");
 
   const guess = strains.find(s => s.name.toLowerCase() === raw.toLowerCase());
   if (!guess) return alert("Strain must be from the database.");
 
+  guessCount++;
+
   const tr=document.createElement("tr");
 
-  // NAME COLUMN
+  /* NAME */
   const nameTd=document.createElement("td");
   nameTd.appendChild(tile(guess.name, alphaProximityColor(guess.name, mystery.name)));
 
-  // LETTER COUNT COLUMN
+  /* LETTERS */
   const ls = letters(guess.name);
   const lt = letters(mystery.name);
   const lettersTd=document.createElement("td");
   lettersTd.appendChild(tile(`${ls} ${arrow(ls,lt)}`, colorNum(ls,lt,1)));
 
-  // TYPE
+  /* TYPE */
   const typeTd=document.createElement("td");
   typeTd.appendChild(tile(guess.type, typeProximityColor(guess.type, mystery.type)));
 
-  // THC
+  /* THC */
   const thcTd=document.createElement("td");
   thcTd.appendChild(tile(`${guess.thc}% ${arrow(guess.thc,mystery.thc)}`, colorNum(guess.thc,mystery.thc,2)));
 
-  // TERPENE
+  /* TERPENE */
   const terpTd=document.createElement("td");
   terpTd.appendChild(tile(guess.terpene, guess.terpene.toLowerCase()===mystery.terpene.toLowerCase() ? "green" : "gray"));
 
-  // YEAR
+  /* YEAR */
   const yearTd=document.createElement("td");
   yearTd.appendChild(tile(`${guess.year} ${arrow(guess.year,mystery.year)}`, colorNum(guess.year,mystery.year,2)));
 
@@ -325,16 +343,21 @@ function submitGuess() {
   document.getElementById("guessesBody").appendChild(tr);
   flipTilesSequential(tr);
 
+  /* WIN */
   if (guess.name.toLowerCase() === mystery.name.toLowerCase()) {
-    document.getElementById("success").style.display = "block";
+    document.getElementById("success").style.display="block";
+    return showStatsOverlay(true);
   }
 
-  document.getElementById("guessInput").value = "";
+  /* OUT OF GUESSES */
+  if (guessCount >= MAX_GUESSES) {
+    return showStatsOverlay(false);
+  }
+
+  document.getElementById("guessInput").value="";
 }
 
-/* ---------------------------------------------
-   TILE + ANIMATION
---------------------------------------------- */
+/* TILE + ANIMATION */
 function tile(content,color){
   const el=document.createElement("span");
   el.className=`tile flip ${color}`;
@@ -347,6 +370,36 @@ function flipTilesSequential(container){
   tiles.forEach((t,i)=>{
     setTimeout(()=>{ t.classList.remove("flip"); t.classList.add("show"); }, i*180);
   });
+}
+
+/* STATS OVERLAY */
+function showStatsOverlay(won) {
+  const overlay=document.getElementById("statsOverlay");
+  const title=document.getElementById("statsTitle");
+  const g=document.getElementById("statsGuesses");
+  const bars=document.getElementById("statsBars");
+
+  title.textContent = won
+    ? `You solved Weedle in ${guessCount} guess${guessCount!==1?"es":""}!`
+    : `Out of guesses — the strain was ${mystery.name}`;
+
+  g.textContent = `Guesses used: ${guessCount} / 6`;
+
+  /* Fake global distribution — replace with real data later */
+  const fakeDist=[0,12,22,34,18,9];
+  bars.innerHTML="";
+
+  fakeDist.forEach((v,i)=>{
+    const bar=document.createElement("div");
+    bar.className="stats-bar";
+    bar.style.width=(v*3)+"px";
+    bar.textContent=`${i+1}: ${v}`;
+    if(won && i+1===guessCount) bar.classList.add("green");
+    bars.appendChild(bar);
+  });
+
+  overlay.style.display="flex";
+  document.getElementById("closeStats").onclick=()=>{ overlay.style.display="none"; };
 }
 </script>
 
