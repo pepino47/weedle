@@ -1,156 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Weedle</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
-    h1 { text-align: center; }
-    .logo { display:block; margin:auto; width:200px; }
-    .game-container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
-    .row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 6px 0; }
-    .correct { background: #6aaa64; color: white; padding: 4px 6px; border-radius: 4px; }
-    .close { background: #c9b458; color: white; padding: 4px 6px; border-radius: 4px; }
-    .wrong { background: #787c7e; color: white; padding: 4px 6px; border-radius: 4px; }
-    .guess-box { width: 100%; padding: 8px; margin-top: 10px; }
-    .dropdown { width:100%; background:white; border:1px solid #ccc; border-radius:4px; display:none; position:absolute; z-index:10; max-height:150px; overflow-y:auto; }
-    .dropdown div { padding:8px; cursor:pointer; }
-    .dropdown div:hover { background:#eee; }
-    button { width: 100%; padding: 10px; margin-top: 10px; background: #4caf50; border: none; color: white; cursor: pointer; border-radius: 6px; font-size: 16px; }
-    button:hover { background: #45a049; }
-    .result { margin-top: 20px; }
-    .win { text-align:center; font-size:18px; margin-top:10px; color:#6aaa64; font-weight:bold; }
-  </style>
+<meta charset="UTF-8">
+<title>Weedle</title>
+<style>
+    body { font-family: Arial, sans-serif; background: #fafafa; margin: 0; padding: 20px; }
+
+    #guessContainer { width: 350px; margin-bottom: 15px; }
+
+    #guessInput {
+        width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;
+        font-size: 16px; background: white;
+    }
+
+    #dropdown {
+        width: 100%; border: 1px solid #ccc; border-top: none; border-radius: 0 0 6px 6px;
+        background: white; max-height: 200px; overflow-y: auto; display: none;
+        position: absolute; z-index: 1000;
+    }
+
+    .dropdown-item {
+        padding: 10px; cursor: pointer;
+    }
+    .dropdown-item:hover { background: #eee; }
+
+    table {
+        width: 100%; border-collapse: collapse; margin-top: 20px; background: white;
+    }
+    th, td {
+        padding: 10px; border-bottom: 1px solid #ccc; text-align: left;
+        vertical-align: top;
+    }
+    th { background: #f0f0f0; }
+
+    .green { color: green; font-weight: bold; }
+    .red { color: red; font-weight: bold; }
+</style>
 </head>
 <body>
-  <img src="weedle.jpg" class="logo" alt="Weedle Logo" />
-  <h1>Weedle</h1>
-  <div class="game-container">
-    <input id="guessInput" class="guess-box" placeholder="Guess a strain..." autocomplete="off" />
-    <div id="dropdown" class="dropdown"></div>
 
-    
+<h2>Weedle</h2>
 
-    <button onclick="submitGuess()">Submit Guess</button>
+<div id="guessContainer">
+    <input id="guessInput" type="text" placeholder="Guess a strain..." autocomplete="off">
+    <div id="dropdown"></div>
+</div>
 
-    <div id="results" class="result"></div>
-    <div id="winMsg" class="win"></div>
-  </div>
+<table id="resultsTable">
+    <thead>
+        <tr>
+            <th>Strain</th>
+            <th>Type</th>
+            <th>THC %</th>
+            <th>Terpene</th>
+            <th>Year</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
 
-  <script>
-    const strains = [
-      { name: "Blue Dream", type: "Hybrid", thc: 18, terp: "Myrcene", year: 2003 },
-      { name: "OG Kush", type: "Indica", thc: 20, terp: "Limonene", year: 1996 },
-      { name: "Sour Diesel", type: "Sativa", thc: 19, terp: "Caryophyllene", year: 1991 },
-      { name: "Girl Scout Cookies", type: "Hybrid", thc: 21, terp: "Myrcene", year: 2012 }
-    ];
+<script>
+/* ---- Sample strain list ---- */
+const strains = [
+    { name: "Blue Dream", type: "Hybrid", thc: 20, terpene: "Myrcene", year: 2011 },
+    { name: "OG Kush", type: "Hybrid", thc: 22, terpene: "Limonene", year: 1996 },
+    { name: "Green Crack", type: "Sativa", thc: 18, terpene: "Myrcene", year: 2012 },
+    { name: "Gorilla Glue", type: "Hybrid", thc: 24, terpene: "Caryophyllene", year: 2013 }
+];
 
-    const dropdown = document.getElementById("dropdown");
-    const inputBox = document.getElementById("guessInput");
+/* ---- DOM elements ---- */
+const input = document.getElementById("guessInput");
+const dropdown = document.getElementById("dropdown");
+const tableBody = document.querySelector("#resultsTable tbody");
 
-    function updateDropdown(text) {
-      dropdown.innerHTML = "";
-      if (!text) { dropdown.style.display = "none"; return; }
-      const filtered = strains.filter(s => s.name.toLowerCase().startsWith(text.toLowerCase()));
-      if (filtered.length === 0) { dropdown.style.display = "none"; return; }
-      filtered.forEach(s => {
-        const item = document.createElement("div");
-        item.textContent = s.name;
-        item.onclick = () => { inputBox.value = s.name; dropdown.style.display = "none"; };
-        dropdown.appendChild(item);
-      });
-      dropdown.style.display = "block";
-    }(letter) {
-      strainList.innerHTML = "";
-      if (!letter) return;
-      letter = letter.toLowerCase();
-      strains
-        .filter(s => s.name.toLowerCase().includes(letter))
-        .forEach(s => {
-          const option = document.createElement("option");
-          option.value = s.name;
-          strainList.appendChild(option);
-        });
+/* ---- Helper: remove spaces before counting letters ---- */
+function countLetters(str) {
+    return str.replace(/\s+/g, "").length;
+}
+
+/* ---- Make dropdown match only names that START with typed text ---- */
+input.addEventListener("input", () => {
+    const val = input.value.toLowerCase().trim();
+    dropdown.innerHTML = "";
+
+    if (!val) {
+        dropdown.style.display = "none";
+        return;
     }
 
-    inputBox.addEventListener("input", e => {
-      updateDropdown(e.target.value.toLowerCase());
+    const matches = strains.filter(s => s.name.toLowerCase().startsWith(val));
+
+    if (matches.length === 0) {
+        dropdown.style.display = "none";
+        return;
+    }
+
+    matches.forEach(s => {
+        const item = document.createElement("div");
+        item.className = "dropdown-item";
+        item.textContent = s.name;
+        item.onclick = () => selectStrain(s);
+        dropdown.appendChild(item);
     });
 
-    const correct = strains[Math.floor(Math.random() * strains.length)];
+    dropdown.style.display = "block";
+});
 
-    function compare(value, correctValue) {
-      if (value === correctValue) return "correct";
-      const diff = Math.abs(value - correctValue);
-      if (diff <= 1) return "close";
-      return "wrong";
-    }
+/* ---- When selecting a strain ---- */
+function selectStrain(strain) {
+    dropdown.style.display = "none";
+    input.value = "";
 
-    function arrow(value, correctValue) {
-      if (value === correctValue) return "=";
-      return value < correctValue ? "↑" : "↓";
-    }
+    addRow(strain);
+}
 
-    function submitGuess() {
-      const guessName = inputBox.value.trim();
-      const guess = strains.find(s => s.name.toLowerCase() === guessName.toLowerCase());
+/* ---- Add horizontal row with combined “Strain + letters” column ---- */
+function addRow(s) {
+    const row = document.createElement("tr");
 
-      if (!guess) {
-        alert("Please select a strain from the list.");
-        return;
-      }
+    const letterCount = countLetters(s.name);
 
-      const results = document.getElementById("results");
-      const winMsg = document.getElementById("winMsg");
-      results.innerHTML = "";
-      winMsg.innerHTML = "";
+    row.innerHTML = `
+        <td>
+            <strong>Strain:</strong><br>
+            ${s.name} (${letterCount} letters ↑)
+        </td>
+        <td>${s.type}</td>
+        <td>${s.thc}%</td>
+        <td>${s.terpene}</td>
+        <td>${s.year}</td>
+    `;
 
-      const letterCountGuess = guess.name.length;
-      const letterCountCorrect = correct.name.length;
+    tableBody.appendChild(row);
+}
+</script>
 
-      const rows = [
-        { label: "Strain", val: guess.name, correctVal: correct.name },
-        { label: "Letters", val: `${letterCountGuess} letters`, correctVal: `${letterCountCorrect} letters`, numericVal: letterCountGuess, numericCorrect: letterCountCorrect },
-        { label: "Type", val: guess.type, correctVal: correct.type },
-        { label: "THC %", val: guess.thc, correctVal: correct.thc },
-        { label: "Dominant Terpene", val: guess.terp, correctVal: correct.terp },
-        { label: "Debut Year", val: guess.year, correctVal: correct.year }
-      ];
-
-      rows.forEach(r => {
-        const row = document.createElement("div");
-        row.className = "row";
-
-        let state;
-
-        if (r.label === "THC %" || r.label === "Debut Year") {
-          state = compare(r.val, r.correctVal);
-          row.innerHTML = `
-            <span>${r.label}:</span>
-            <span class="${state}">${r.val} ${arrow(r.val, r.correctVal)}</span>
-          `;
-        } else if (r.label === "Letters") {
-          state = compare(r.numericVal, r.numericCorrect);
-          row.innerHTML = `
-            <span>${r.label}:</span>
-            <span class="${state}">${r.val} ${arrow(r.numericVal, r.numericCorrect)}</span>
-          `;
-        } else {
-          state = r.val === r.correctVal ? "correct" : "wrong";
-          row.innerHTML = `
-            <span>${r.label}:</span>
-            <span class="${state}">${r.val}</span>
-          `;
-        }
-
-        results.appendChild(row);
-      });
-
-      if (guess.name === correct.name) {
-        winMsg.innerHTML = "🎉 You guessed the correct strain!";
-      }
-    }
-  </script>
 </body>
 </html>
