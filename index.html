@@ -154,7 +154,7 @@ tbody td{
    STRAIN DATA WITH IMAGE SUPPORT
 --------------------------------------------- */
 const strains = [
-  /* Example strain with image */
+  /* Example strain */
   { 
     name:"Cherry Pie", 
     type:"Hybrid", 
@@ -164,7 +164,7 @@ const strains = [
     image:"cherry-pie.jpg"
   },
 
-  /* Strains without images yet */
+  /* Strains - some need images */
   { name:"Blue Dream", type:"Sativa/Hybrid", thc:18, terpene:"Myrcene", year:2003 },
   { name:"OG Kush", type:"Hybrid", thc:20, terpene:"Limonene", year:1996 },
   { name:"Sour Diesel", type:"Sativa", thc:19, terpene:"Limonene", year:1991 },
@@ -172,11 +172,13 @@ const strains = [
   { name:"Northern Lights", type:"Indica", thc:17, terpene:"Myrcene", year:1985 },
   { name:"Green Crack", type:"Sativa", thc:19, terpene:"Myrcene", year:2012 },
   { name:"Gorilla Glue", type:"Hybrid", thc:24, terpene:"Caryophyllene", year:2013 },
-  { name:"Jack Herer", type:"Sativa", thc:18, terpene:"Terpinolene", year:1995 }
+  { name:"Jack Herer", type:"Sativa", thc:18, terpene:"Terpinolene", year:1995 },
+  { name:"Wedding Cake", type:"Hybrid", thc:22, terpene:"Caryophyllene", year:2014, image:"wedding-cake.jpg" }
+  
 ];
 
 /* ---------------------------------------------
-   DAILY STRAIN — ONLY FROM STRAINS WITH IMAGES
+   DAILY STRAIN - ONLY FROM STRAINS WITH IMAGES
 --------------------------------------------- */
 const strainsWithImages = strains.filter(s => s.image);
 
