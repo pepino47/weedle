@@ -36,11 +36,13 @@ h1{margin:0; font-size:1.25rem;}
 }
 
 #strainImage {
-  width: 260px;
+  width: 100%;
+  max-width: 260px;
+  height: auto;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-  display: block;    
-  margin: 0 auto;     
+  display: block;
+  margin: 0 auto;
 }
 
 #strainLabel {
@@ -133,7 +135,7 @@ tbody td{
 <table>
 <thead>
 <tr>
-  <th>Strain</th>
+  <th>Name</th>
   <th>Letters</th>
   <th>Type</th>
   <th>THC %</th>
@@ -150,72 +152,58 @@ tbody td{
 </div>
 
 <script>
-/* ---------------------------------------------
-   STRAIN DATA WITH IMAGE SUPPORT
---------------------------------------------- */
-const strains = [
-  /* Example strain */
-  { 
-    name:"Cherry Pie", 
-    type:"Hybrid", 
-    thc:18, 
-    terpene:"Caryophyllene", 
-    year:2010,
-    image:"cherry-pie.jpg"
-  },
-
-  /* Strains - some need images */
-  { name:"Blue Dream", type:"Sativa/Hybrid", thc:18, terpene:"Myrcene", year:2003 },
-  { name:"OG Kush", type:"Hybrid", thc:20, terpene:"Limonene", year:1996 },
-  { name:"Sour Diesel", type:"Sativa", thc:19, terpene:"Limonene", year:1991 },
-  { name:"Girl Scout Cookies", type:"Hybrid", thc:22, terpene:"Caryophyllene", year:2012 },
-  { name:"Northern Lights", type:"Indica", thc:17, terpene:"Myrcene", year:1985 },
-  { name:"Green Crack", type:"Sativa", thc:19, terpene:"Myrcene", year:2012 },
-  { name:"Gorilla Glue", type:"Hybrid", thc:24, terpene:"Caryophyllene", year:2013 },
-  { name:"Jack Herer", type:"Sativa", thc:18, terpene:"Terpinolene", year:1995 },
-  { name:"Wedding Cake", type:"Hybrid", thc:22, terpene:"Caryophyllene", year:2014, image:"wedding-cake.jpg" }
-  
-];
+let strains = [];
+let mystery;
 
 /* ---------------------------------------------
-   DAILY STRAIN - ONLY FROM STRAINS WITH IMAGES
+   LOAD STRAINS FROM JSON
 --------------------------------------------- */
-const strainsWithImages = strains.filter(s => s.image);
+fetch("strains.json")
+  .then(res => res.json())
+  .then(data => {
+    strains = data;
+    initializeGame();
+  });
 
-// If none have images, fallback to all strains
-const pool = strainsWithImages.length ? strainsWithImages : strains;
+/* ---------------------------------------------
+   GAME INITIALIZATION
+--------------------------------------------- */
+function initializeGame() {
+  const strainsWithImages = strains.filter(s => s.image);
+  const pool = strainsWithImages.length ? strainsWithImages : strains;
 
-function dailyIndex(date = new Date()) {
-  const epoch = Date.UTC(2023, 0, 1);
-  const today = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-  const diff = Math.floor((today - epoch) / (1000*60*60*24));
-  return Math.abs(diff) % pool.length;
+  function dailyIndex(date = new Date()) {
+    const epoch = Date.UTC(2023, 0, 1);
+    const today = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+    return Math.floor((today - epoch) / (1000*60*60*24)) % pool.length;
+  }
+
+  mystery = pool[dailyIndex()];
+
+  loadDailyStrainImage();
+  enableInputHandlers();
 }
 
-const mystery = pool[dailyIndex()];
-
 /* ---------------------------------------------
-   DISPLAY DATE ABOVE IMAGE (NO STRAIN NAME)
+   DISPLAY DATE + IMAGE
 --------------------------------------------- */
-const strainImageEl = document.getElementById("strainImage");
-const strainLabelEl = document.getElementById("strainLabel");
+function loadDailyStrainImage() {
+  const strainImageEl = document.getElementById("strainImage");
+  const strainLabelEl = document.getElementById("strainLabel");
 
-// Format today's date nicely
-const today = new Date();
-const dateStr = today.toLocaleDateString("en-US", {
-  weekday: "long",
-  month: "long",
-  day: "numeric",
-  year: "numeric"
-});
+  const today = new Date();
+  const dateStr = today.toLocaleDateString("en-US", {
+    weekday:"long", month:"long", day:"numeric", year:"numeric"
+  });
 
-if (mystery.image) {
-  strainImageEl.src = "images/" + mystery.image;
-  strainImageEl.style.display = "block";
   strainLabelEl.textContent = `Strain of the Day — ${dateStr}`;
-} else {
-  strainImageEl.style.display = "none";
-  strainLabelEl.textContent = `Strain of the Day — ${dateStr}`;
+
+  if (mystery.image) {
+    strainImageEl.src = "images/" + mystery.image;
+    strainImageEl.style.display = "block";
+  } else {
+    strainImageEl.style.display = "none";
+  }
 }
 
 /* ---------------------------------------------
@@ -225,74 +213,121 @@ const strip = s => s.replace(/\s+/g,'');
 const letters = s => strip(s).length;
 const arrow = (g,t)=> g===t ? "" : (g<t?"↑":"↓");
 
+function alphaProximityColor(guessName, mysteryName) {
+  const g = guessName.trim()[0].toLowerCase();
+  const m = mysteryName.trim()[0].toLowerCase();
+  if (!g || !m) return "gray";
+  if (g === m) return "green";
+  return Math.abs(g.charCodeAt(0) - m.charCodeAt(0)) <= 1 ? "yellow" : "gray";
+}
+
+function typeProximityColor(guessType, mysteryType) {
+  const order = ["sativa","sativa/hybrid","hybrid","indica/hybrid","indica"];
+  const gi = order.indexOf(guessType.toLowerCase());
+  const mi = order.indexOf(mysteryType.toLowerCase());
+  if (gi === -1 || mi === -1) return "gray";
+  if (gi === mi) return "green";
+  return Math.abs(gi - mi) === 1 ? "yellow" : "gray";
+}
+
 function colorNum(g,t,threshold){
   if(g===t) return "green";
   if(Math.abs(g-t)<=threshold) return "yellow";
   return "gray";
 }
-function colorCat(g,t){
-  return g.toLowerCase()===t.toLowerCase() ? "green" : "gray";
-}
-
-function alphaProximityColor(guessName, mysteryName) {
-  const g = guessName.trim()[0].toLowerCase();
-  const m = mysteryName.trim()[0].toLowerCase();
-
-  if (g === m) return "green";
-
-  const diff = Math.abs(g.charCodeAt(0) - m.charCodeAt(0));
-  return diff <= 1 ? "yellow" : "gray";
-}
-
-function typeProximityColor(guessType, mysteryType) {
-  const order = ["sativa", "sativa/hybrid", "hybrid", "indica/hybrid", "indica"];
-
-  const g = guessType.toLowerCase();
-  const m = mysteryType.toLowerCase();
-
-  const gi = order.indexOf(g);
-  const mi = order.indexOf(m);
-
-  if (gi === -1 || mi === -1) return "gray";   // safety fallback
-
-  if (gi === mi) return "green";
-
-  return Math.abs(gi - mi) === 1 ? "yellow" : "gray";
-}
 
 /* ---------------------------------------------
-   DROPDOWN
+   ENABLE INPUT + DROPDOWN + BUTTONS
 --------------------------------------------- */
-const guessInput=document.getElementById("guessInput");
-const dropdown=document.getElementById("dropdown");
+function enableInputHandlers() {
+  const guessInput = document.getElementById("guessInput");
+  const dropdown = document.getElementById("dropdown");
 
-guessInput.addEventListener("input",e=>{
-  const q=e.target.value.trim().toLowerCase();
-  if(!q){ dropdown.style.display="none"; return; }
-  dropdown.innerHTML="";
-  const matches=strains.filter(s=>s.name.toLowerCase().startsWith(q));
-  if(!matches.length){ dropdown.style.display="none"; return; }
-  matches.forEach(s=>{
-    const d=document.createElement("div");
-    d.className="dd-item";
-    d.textContent=s.name;
-    d.onclick=()=>{ guessInput.value=s.name; dropdown.style.display="none"; };
-    dropdown.appendChild(d);
+  guessInput.addEventListener("input", e => {
+    const q = e.target.value.trim().toLowerCase();
+    dropdown.innerHTML = "";
+    if (!q) { dropdown.style.display = "none"; return; }
+
+    const matches = strains.filter(s => s.name.toLowerCase().startsWith(q));
+    matches.forEach(s => {
+      const d = document.createElement("div");
+      d.className = "dd-item";
+      d.textContent = s.name;
+      d.onclick = () => { guessInput.value = s.name; dropdown.style.display = "none"; };
+      dropdown.appendChild(d);
+    });
+
+    dropdown.style.display = matches.length ? "block" : "none";
   });
-  dropdown.style.display="block";
-});
 
-document.addEventListener("click",e=>{
-  if(!document.getElementById("guessContainer").contains(e.target))
-    dropdown.style.display="none";
-});
+  document.getElementById("submitBtn").onclick = submitGuess;
+  document.getElementById("resetBtn").onclick = resetGame;
+}
+
+function resetGame() {
+  document.getElementById("guessesBody").innerHTML = "";
+  document.getElementById("success").style.display = "none";
+  document.getElementById("guessInput").value = "";
+}
 
 /* ---------------------------------------------
-   ADD GUESS ROW + FLIP ANIMATION
+   SUBMIT GUESS
 --------------------------------------------- */
-const guessesBody=document.getElementById("guessesBody");
-const success=document.getElementById("success");
+function submitGuess() {
+  const raw = document.getElementById("guessInput").value.trim();
+  if (!raw) return alert("Select a strain from the dropdown.");
 
+  const guess = strains.find(s => s.name.toLowerCase() === raw.toLowerCase());
+  if (!guess) return alert("Strain must be from the database.");
+
+  const tr=document.createElement("tr");
+
+  // NAME COLUMN
+  const nameTd=document.createElement("td");
+  nameTd.appendChild(tile(guess.name, alphaProximityColor(guess.name, mystery.name)));
+
+  // LETTER COUNT COLUMN
+  const ls = letters(guess.name);
+  const lt = letters(mystery.name);
+  const lettersTd=document.createElement("td");
+  lettersTd.appendChild(tile(`${ls} ${arrow(ls,lt)}`, colorNum(ls,lt,1)));
+
+  // TYPE
+  const typeTd=document.createElement("td");
+  typeTd.appendChild(tile(guess.type, typeProximityColor(guess.type, mystery.type)));
+
+  // THC
+  const thcTd=document.createElement("td");
+  thcTd.appendChild(tile(`${guess.thc}% ${arrow(guess.thc,mystery.thc)}`, colorNum(guess.thc,mystery.thc,2)));
+
+  // TERPENE
+  const terpTd=document.createElement("td");
+  terpTd.appendChild(tile(guess.terpene, guess.terpene.toLowerCase()===mystery.terpene.toLowerCase() ? "green" : "gray"));
+
+  // YEAR
+  const yearTd=document.createElement("td");
+  yearTd.appendChild(tile(`${guess.year} ${arrow(guess.year,mystery.year)}`, colorNum(guess.year,mystery.year,2)));
+
+  tr.appendChild(nameTd);
+  tr.appendChild(lettersTd);
+  tr.appendChild(typeTd);
+  tr.appendChild(thcTd);
+  tr.appendChild(terpTd);
+  tr.appendChild(yearTd);
+
+  document.getElementById("guessesBody").appendChild(tr);
+  flipTilesSequential(tr);
+
+  if (guess.name.toLowerCase() === mystery.name.toLowerCase()) {
+    document.getElementById("success").style.display = "block";
+  }
+
+  document.getElementById("guessInput").value = "";
+}
+
+/* ---------------------------------------------
+   TILE + ANIMATION
+--------------------------------------------- */
 function tile(content,color){
   const el=document.createElement("span");
   el.className=`tile flip ${color}`;
@@ -303,84 +338,10 @@ function tile(content,color){
 function flipTilesSequential(container){
   const tiles=[...container.querySelectorAll(".tile")];
   tiles.forEach((t,i)=>{
-    setTimeout(() => {
-      t.classList.remove("flip");
-      t.classList.add("show");
-    }, i*180);
+    setTimeout(()=>{ t.classList.remove("flip"); t.classList.add("show"); }, i*180);
   });
 }
-
-function submitGuess(){
-  const raw=guessInput.value.trim();
-  if(!raw) return alert("Select a strain from the dropdown.");
-
-  const guess=strains.find(s=>s.name.toLowerCase()===raw.toLowerCase());
-  if(!guess) return alert("Strain must be from the database.");
-
-  const tr=document.createElement("tr");
-
-/* NAME COLUMN (colored by alphabetical proximity) */
-const nameTd = document.createElement("td");
-const nameColor = alphaProximityColor(guess.name, mystery.name);
-nameTd.appendChild(tile(guess.name, nameColor));
-
-/* LETTER COUNT COLUMN (same logic as before) */
-const ls = letters(guess.name);
-const lt = letters(mystery.name);
-const letterColor = colorNum(ls, lt, 1);
-const lettersTd = document.createElement("td");
-lettersTd.appendChild(tile(`${ls} ${arrow(ls,lt)}`, letterColor));
-
-
-  const typeTd=document.createElement("td");
-  typeTd.appendChild(
-    tile(guess.type, typeProximityColor(guess.type, mystery.type))
-  );
-
-
-  const thcTd=document.createElement("td");
-  thcTd.appendChild(
-    tile(`${guess.thc}% ${arrow(guess.thc,mystery.thc)}`,
-         colorNum(guess.thc,mystery.thc,2))
-  );
-
-  const terpTd=document.createElement("td");
-  terpTd.appendChild(
-    tile(guess.terpene, colorCat(guess.terpene,mystery.terpene))
-  );
-
-  const yearTd=document.createElement("td");
-  yearTd.appendChild(
-    tile(`${guess.year} ${arrow(guess.year,mystery.year)}`,
-         colorNum(guess.year,mystery.year,2))
-  );
-
-  tr.appendChild(nameTd);
-  tr.appendChild(lettersTd);
-  tr.appendChild(typeTd);
-  tr.appendChild(thcTd);
-  tr.appendChild(terpTd);
-  tr.appendChild(yearTd);
-
-  guessesBody.appendChild(tr);
-  flipTilesSequential(tr);
-
-  if(guess.name.toLowerCase()===mystery.name.toLowerCase()){
-    success.style.display="block";
-  }
-
-  guessInput.value="";
-}
-
-/* ---------------------------------------------
-   BUTTONS
---------------------------------------------- */
-document.getElementById("submitBtn").onclick=submitGuess;
-document.getElementById("resetBtn").onclick=()=>{
-  guessesBody.innerHTML="";
-  success.style.display="none";
-  guessInput.value="";
-};
 </script>
+
 </body>
 </html>
