@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weedle</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f3f3;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    #logo {
+      width: 120px;
+      margin-bottom: 15px;
+    }
+
+    table {
+      margin: 0 auto;
+      width: 80%;
+      max-width: 750px;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+    }
+
+    th {
+      background: #2e7d32;
+      color: white;
+      padding: 10px;
+      font-size: 18px;
+    }
+
+    td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      font-size: 16px;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .correct { background-color: #6aaa64; color: white; }   /* green */
+    .present { background-color: #c9b458; color: white; }   /* yellow */
+    .absent { background-color: #787c7e; color: white; }    /* gray */
+
+    .arrow-up { color: green; font-weight: bold; }
+    .arrow-down { color: red; font-weight: bold; }
+
+    #winner {
+      font-size: 26px;
+      margin-top: 15px;
+      font-weight: bold;
+      color: #2e7d32;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <img id="logo" src="weedle.jpg" alt="Weedle Logo" />
+
+  <h1>Guess the Strain</h1>
+  <input id="guess" placeholder="Type a strain..." />
+  <button onclick="submitGuess()">Submit</button>
+
+  <p id="winner">🎉 You found today’s strain! 🎉</p>
+
+  <table id="results">
+    <thead>
+      <tr>
+        <th>Guess</th>
+        <th>THC %</th>
+        <th>Year</th>
+        <th>Letters</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+<script>
+  const todaysStrain = {
+    name: "Blue Dream",
+    thc: 22,
+    year: 2003
+  };
+
+  function wordleColor(guess, answer) {
+    if (guess === answer) return 'correct';
+    if (answer.includes(guess)) return 'present';
+    return 'absent';
+  }
+
+  function arrow(val, target) {
+    if (val == target) return "=";
+    return val > target ? "<span class='arrow-down'>↓</span>" : "<span class='arrow-up'>↑</span>";
+  }
+
+  function compareLetters(g, a) {
+    let cells = [];
+    for (let i = 0; i < a.length; i++) {
+      let guessChar = g[i] || "";
+      let cls = wordleColor(guessChar.toLowerCase(), a[i].toLowerCase());
+      cells.push(`<span class="${cls}">${guessChar || "_"}</span>`);
+    }
+    return cells.join(" ");
+  }
+
+  function submitGuess() {
+    const input = document.getElementById("guess");
+    const guess = input.value.trim();
+    if (!guess) return;
+    input.value = "";
+
+    const tbody = document.querySelector("#results tbody");
+    const row = document.createElement("tr");
+
+    const thcGuess = Math.floor(Math.random() * 30);
+    const yearGuess = 1990 + Math.floor(Math.random() * 30);
+
+    const thcArrow = arrow(thcGuess, todaysStrain.thc);
+    const yearArrow = arrow(yearGuess, todaysStrain.year);
+
+    row.innerHTML = `
+      <td>${guess}</td>
+      <td>${thcGuess}% ${thcArrow}</td>
+      <td>${yearGuess} ${yearArrow}</td>
+      <td>${compareLetters(guess, todaysStrain.name)}</td>
+    `;
+
+    tbody.appendChild(row);
+
+    if (guess.toLowerCase() === todaysStrain.name.toLowerCase()) {
+      document.getElementById("winner").style.display = "block";
+    }
+  }
+</script>
+</body>
+</html>
