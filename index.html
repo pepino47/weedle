@@ -244,6 +244,22 @@ function alphaProximityColor(guessName, mysteryName) {
   return diff <= 1 ? "yellow" : "gray";
 }
 
+function typeProximityColor(guessType, mysteryType) {
+  const order = ["sativa", "sativa/hybrid", "hybrid", "indica/hybrid", "indica"];
+
+  const g = guessType.toLowerCase();
+  const m = mysteryType.toLowerCase();
+
+  const gi = order.indexOf(g);
+  const mi = order.indexOf(m);
+
+  if (gi === -1 || mi === -1) return "gray";   // safety fallback
+
+  if (gi === mi) return "green";
+
+  return Math.abs(gi - mi) === 1 ? "yellow" : "gray";
+}
+
 /* ---------------------------------------------
    DROPDOWN
 --------------------------------------------- */
@@ -317,7 +333,10 @@ lettersTd.appendChild(tile(`${ls} ${arrow(ls,lt)}`, letterColor));
 
 
   const typeTd=document.createElement("td");
-  typeTd.appendChild(tile(guess.type, colorCat(guess.type,mystery.type)));
+  typeTd.appendChild(
+    tile(guess.type, typeProximityColor(guess.type, mystery.type))
+  );
+
 
   const thcTd=document.createElement("td");
   thcTd.appendChild(
