@@ -8,7 +8,7 @@
 {"name":"Blueberry","type":"Indica/Hybrid","thc":17,"terpene":"Myrcene","year":1970},
 {"name":"Bubba Kush","type":"Indica","thc":19,"terpene":"Caryophyllene","year":1996, "image":"bubba-kush.jpg" },
 {"name":"Cereal Milk","type":"Hybrid","thc":20,"terpene":"Caryophyllene","year":2019},
-{"name":"Cherry Pie","type":"Indica/Hybrid","thc":18,"terpene":"Caryophyllene","year":2010},
+{"name":"Cherry Pie","type":"Indica/Hybrid","thc":18,"terpene":"Caryophyllene","year":2010, "image":"cherry-pie.jpg" },
 {"name":"Cinderella 99","type":"Sativa/Hybrid","thc":19,"terpene":"Caryophyllene","year":2000},
 {"name":"Critical Mass","type":"Indica","thc":18,"terpene":"Myrcene","year":1995},
 {"name":"Death Star","type":"Indica/Hybrid","thc":19,"terpene":"Caryophyllene","year":2001},
@@ -46,7 +46,7 @@
 {"name":"Super Lemon Haze","type":"Sativa","thc":19,"terpene":"Limonene","year":1990},
 {"name":"Tangie","type":"Sativa","thc":18,"terpene":"Limonene","year":2010},
 {"name":"Trainwreck","type":"Sativa/Hybrid","thc":19,"terpene":"Limonene","year":2000},
-{"name":"Wedding Cake","type":"Hybrid","thc":22,"terpene":"Caryophyllene","year":2014 },
+{"name":"Wedding Cake","type":"Hybrid","thc":22,"terpene":"Caryophyllene","year":2014, "image":"wedding-cake.jpg" },
 {"name":"White Widow","type":"Hybrid","thc":18,"terpene":"Myrcene","year":1994},
 {"name":"Zkittlez","type":"Hybrid","thc":19,"terpene":"Caryophyllene","year":2016},
 
